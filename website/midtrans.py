@@ -3,8 +3,8 @@ import midtransclient
 def create_midtrans_transaction(order_id, gross_amount, customer_details):
     snap = midtransclient.Snap(
     is_production=False,
-    server_key='SB-Mid-server-7mR3-jbBLtZ-shC3OiZqPDqo',
-    client_key='SB-Mid-client-z_VKWl4iEpLX2i1q'
+    server_key='WRITE YOUR OWN KEY HERE',
+    client_key='WRITE YOUR OWN KEY HERE'
 )
     param = {
         "transaction_details": {
