@@ -1,0 +1,725 @@
+{% extends "base.html" %}
+
+{% block title %}Riwayat Pesanan - Pangkalan Gas Aditama{% endblock %}
+
+{% block content %}
+<section class="orders-section">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for message in messages %}
+        <div class="flash-message">
+            <div class="flash-content">
+                <i class="ri-checkbox-circle-line"></i>
+                <span>{{ message }}</span>
+            </div>
+            <button class="close-flash" onclick="closeFlashMessage(this)">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <div class="container py-5">
+        <h2 class="section-title mb-4">Riwayat Pesanan</h2>
+        
+        {% if orders %}
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="order-header">
+                    <div class="order-id">
+                        <span class="label">ID Pesanan:</span>
+                        <span class="value">#{{ order.id }}</span>
+                    </div>
+                    <div class="order-date">
+                        <span class="label">Waktu Pemesanan:</span>
+                        <span class="value">{{ order.date_added.strftime('%d %B %Y, %H:%M') }}</span>
+                    </div>
+                    <div class="order-date">
+                        <span class="label">Pesanan Selesai:</span>
+                        <span class="value">   
+                            {% if order.completed_at %}
+                                {{ order.completed_at.strftime('%d-%m-%Y, %H:%M') }}
+                            {% else %}
+                                -
+                            {% endif %}
+                    </span>
+                    </div>
+
+                    <div class="order-status">
+                        <span class="status-badge 
+                            {% if order.status == 'Bayar Sekarang' %}status-unpaid
+                            {% elif order.status == 'Siap Diambil' %}status-ready
+                            {% elif order.status == 'Dalam Proses' %}status-process
+                            {% elif order.status == 'Selesai' %}status-complete
+                            {% elif order.status == 'Gagal' %}status-failed
+                            {% endif %}"
+                            {% if order.status == 'Bayar Sekarang' %}
+                                onclick="location.href='/retry-payment/{{ order.id }}';"
+                                style="cursor: pointer;"
+                            {% endif %}>
+                            {{ order.status }}
+                        </span>
+                    </div>
+                </div>
+
+                {% for detail in order.details %}
+                <div class="order-item">
+                    <div class="item-image">
+                        <img src="{{ detail.variant.main_product.product_picture }}" alt="{{ detail.variant.variant_name }}">
+                    </div>
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h4 class="item-name">{{ detail.variant.variant_name }}</h4>
+                            {% set return_request = ReturnOrder.query.filter_by(order_detail_id=detail.id).first() %}
+                            {% if return_request %}
+                                <div class="return-badge 
+                                    {% if return_request.status == 'Dalam Proses' %}return-process
+                                    {% elif return_request.status == 'Diterima' %}return-accepted
+                                    {% elif return_request.status == 'Ditolak' %}return-rejected
+                                    {% elif return_request.status == 'Selesai' %}return-complete{% endif %}">
+                                    <i class="ri-refresh-line"></i>
+                                    {{ return_request.status }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="item-details">
+                            <span class="quantity">
+                                <i class="ri-shopping-bag-line"></i>
+                                {{ detail.quantity }} pcs
+                            </span>
+                            <span class="price">
+                                <i class="ri-money-dollar-circle-line"></i>
+                                Rp {{ "{:,.0f}".format(detail.price).replace(",", ".") }}
+                            </span>
+                            <span class="subtotal">
+                                <i class="ri-coins-line"></i>
+                                Rp {{ "{:,.0f}".format(detail.sub_total).replace(",", ".") }}
+                            </span>
+                        </div>
+                        
+                        {% if order.status == 'Selesai'  and detail.variant.variant_type != 'tabung_kosong' %}
+                        <div class="return-section">
+                            <button class="return-btn" onclick="showReturnForm('{{ detail.id }}', '{{ detail.variant.variant_name }}', {{ detail.quantity }}, {{ detail.returned_quantity }})">
+                                <i class="ri-arrow-go-back-line"></i> Ajukan Pengembalian
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="order-summary">
+                    <div class="summary-item">
+                        <span class="label">Total Barang:</span>
+                        <span class="value">{{ order.total_quantity }} pcs</span>
+                    </div>
+                    <div class="summary-item total">
+                        <span class="label">Total Harga:</span>
+                        <span class="value">Rp {{ '{:,.0f}'.format(order.total).replace(",", ".") }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if pagination.total_pages > 1 %}
+            <div class="pagination">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('views.orders', page=pagination.prev_page) }}" 
+                   class="pagination-btn"><i class="ri-arrow-left-s-line"></i> Previous</a>
+                {% endif %}
+                
+                {% for page_num in range(1, pagination.total_pages + 1) %}
+                    {% if page_num == pagination.page %}
+                    <span class="pagination-btn active">{{ page_num }}</span>
+                    {% else %}
+                    <a href="{{ url_for('views.orders', page=page_num) }}" 
+                       class="pagination-btn">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('views.orders', page=pagination.next_page) }}" 
+                   class="pagination-btn">Next <i class="ri-arrow-right-s-line"></i></a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="no-orders">
+                <i class="ri-shopping-bag-line"></i>
+                <p>Anda belum memiliki pesanan</p>
+                <a href="/shop" class="shop-now-btn">Pesan Sekarang</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Return Form Popup -->
+<div id="returnPopup" class="return-popup">
+    <div class="return-popup-content">
+        <div class="return-popup-header">
+            <div class="header-content">
+                <i class="ri-arrow-go-back-line"></i>
+                <h5 id="returnPopupTitle">Ajukan Pengembalian</h5>
+            </div>
+            <button class="close-button" onclick="closeReturnForm()">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <form id="returnForm" method="POST">
+            <div class="return-info">
+                <p class="info-text">Pengembalian barang hanya dapat dilakukan untuk tabung yang bocor</p>
+            </div>
+
+
+            <div class="input-container">
+                <textarea 
+                    class="input"
+                    id="returnReason" 
+                    name="reason" 
+                    placeholder=" "
+                    required></textarea>
+                <label for="returnReason">Alasan Detail Pengembalian</label>
+            </div>
+            
+            <div class="input-container">
+                <input 
+                    type="number" 
+                    class="input" 
+                    id="returnQuantity" 
+                    name="quantity" 
+                    min="1" 
+                    value="1"
+                    required>
+                <label for="returnQuantity">Jumlah Pengembalian</label>
+            </div>
+            <div id="quantityInfo" class="quantity-info"></div>
+            
+            <div class="return-popup-footer">
+                <button type="button" class="btn-cancel" onclick="closeReturnForm()">
+                    <i class="ri-close-line"></i> Batal
+                </button>
+                <button type="submit" class="btn-submit">
+                    <i class="ri-check-line"></i> Ajukan Pengembalian
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+
+    function closeFlashMessage(button) {
+        const message = button.closest('.flash-message');
+        removeFlashMessage(message);
+      }
+      
+      function removeFlashMessage(message) {
+        message.classList.add('removing');
+        message.addEventListener('animationend', () => {
+            message.remove();
+        });
+      }
+
+      
+    function showReturnForm(detailId, productName, totalQuantity, returnedQuantity) {
+        const popup = document.getElementById('returnPopup');
+        const form = document.getElementById('returnForm');
+        const quantityInput = document.getElementById('returnQuantity');
+        const quantityInfo = document.getElementById('quantityInfo');
+        
+        form.action = `/request-return/${detailId}`;
+        document.getElementById('returnPopupTitle').textContent = `Pengajuan Pengembalian: ${productName}`;
+        
+        const availableQuantity = totalQuantity - returnedQuantity;
+        quantityInput.max = availableQuantity;
+        quantityInput.value = 1;
+        
+        quantityInfo.textContent = `Maksimal pengembalian sebanyak ${availableQuantity} barang`;
+        
+        popup.style.display = 'block';
+        setTimeout(() => popup.classList.add('active'), 10);
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeReturnForm() {
+        const popup = document.getElementById('returnPopup');
+        popup.classList.remove('active');
+        setTimeout(() => {
+            popup.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }, 300);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const popup = document.getElementById('returnPopup');
+        popup.addEventListener('click', function(event) {
+            if (event.target === popup) {
+                closeReturnForm();
+            }
+        });
+
+        const flashMessages = document.querySelectorAll('.flash-message');
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                removeFlashMessage(message);
+            }, 5000); 
+        });
+    
+        // Floating label effect
+        const textarea = document.getElementById('returnReason');
+        textarea.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+        textarea.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+        });
+    });
+    </script>
+
+<style>
+.orders-section {
+    min-height: 100vh;
+    background-color: var(--black-color);
+    color: var(--text-color);
+    padding: 2rem 0;
+}
+
+.section-title {
+    color: var(--title-color);
+    font-size: 2rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.order-card {
+    background: var(--container-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.order-card:hover {
+    transform: translateY(-4px);
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.order-id, .order-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.label {
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.value {
+    color: var(--title-color);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-unpaid { background: #ff4444; color: white; }
+.status-ready { background: #ffbb33; color: black; }
+.status-process { background: #33b5e5; color: white; }
+.status-complete { background: #00C851; color: white; }
+.status-failed { background: #212121; color: white; }
+
+.return-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.return-process {
+    background-color: rgba(51, 181, 229, 0.2);
+    color: #33b5e5;
+    border: 1px solid rgba(51, 181, 229, 0.4);
+}
+
+.return-accepted {
+    background-color: rgba(255, 187, 51, 0.2);
+    color: #ffbb33;
+    border: 1px solid rgba(255, 187, 51, 0.4);
+}
+
+.return-rejected {
+    background-color: rgba(255, 99, 71, 0.2);
+    color: #ff6347;
+    border: 1px solid rgba(255, 99, 71, 0.4);
+}
+
+.return-complete {
+    background-color: rgba(0, 200, 81, 0.2);
+    color: #00C851;
+    border: 1px solid rgba(0, 200, 81, 0.4);
+}
+
+.order-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.order-item {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.75rem;
+}
+
+.item-image {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+
+.item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-name {
+    color: var(--title-color);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.item-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.item-details span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.return-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--first-color);
+    border: none;
+    border-radius: 0.5rem;
+    color: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.return-btn:hover {
+    opacity: 0.9;
+}
+
+.return-popup {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.return-popup-content {
+    background-color: var(--container-color);
+    margin: 10vh auto;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s ease-out;
+}
+
+.return-popup.active .return-popup-content {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.return-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-content i {
+    color: var(--first-color);
+    font-size: 1.5rem;
+}
+
+.return-popup-header h5 {
+    margin: 0;
+    color: var(--title-color);
+    font-size: 1.25rem;
+    font-weight: var(--font-semi-bold);
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+ }
+ 
+ .close-button:hover {
+    color: var(--first-color);
+    background-color: rgba(255, 255, 255, 0.1);
+ }
+ 
+ .return-info {
+    background-color: rgba(var(--first-color-rgb), 0.1);
+    border-left: 4px solid var(--first-color);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+ }
+ 
+ .info-text {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    margin: 0;
+ }
+ 
+ .input-container {
+    position: relative;
+    margin-bottom: 1.5rem;
+ }
+ 
+ .input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--title-color);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+ }
+
+ 
+ .input:focus {
+    border-color: var(--first-color);
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.08);
+ }
+ 
+ textarea.input {
+    min-height: 120px;
+    resize: vertical;
+ }
+ 
+ .input-container label {
+    position: absolute;
+    left: 1rem;
+    top: 0.4rem;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: all 0.3s ease;
+ }
+ 
+ .input:focus + label,
+ .input:not(:placeholder-shown) + label {
+    transform: translateY(-1.5rem);
+    font-size: 0.85rem;
+    color: var(--first-color);
+ }
+ 
+ .quantity-info {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-color);
+    font-style: italic;
+ }
+ 
+ .return-popup-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+ }
+ 
+ .btn-cancel,
+ .btn-submit {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    font-size: 0.95rem;
+    font-weight: var(--font-semi-bold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+ }
+ 
+ .btn-cancel {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+ }
+ 
+ .btn-submit {
+    background-color: var(--first-color);
+    border: 1px solid var(--first-color);
+    color: var(--white-color);
+ }
+ 
+ .btn-cancel:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+ }
+ 
+ .btn-submit:hover {
+    background-color: var(--first-color-alt);
+ }
+ 
+ .order-summary {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 0.5rem;
+ }
+ 
+ .summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+ }
+ 
+ .summary-item.total {
+    font-size: 1.1rem;
+    font-weight: var(--font-semi-bold);
+    color: var(--title-color);
+ }
+ 
+ @media (max-width: 768px) {
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .order-item {
+        flex-direction: column;
+    }
+    
+    .item-image {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .item-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .return-popup-content {
+        width: 95%;
+        margin: 5vh auto;
+        padding: 1.5rem;
+    }
+ }
+ 
+ .no-orders {
+    text-align: center;
+    padding: 4rem 0;
+ }
+ 
+ .no-orders i {
+    font-size: 4rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+ }
+ 
+ .no-orders p {
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+ }
+ 
+ .shop-now-btn {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: var(--first-color);
+    color: white;
+    border-radius: 2rem;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+ }
+ 
+ .shop-now-btn:hover {
+    opacity: 0.9;
+ }
+
+ {% endblock %}

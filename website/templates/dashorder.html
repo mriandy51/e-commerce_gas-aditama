@@ -1,0 +1,640 @@
+{% extends 'basedash.html' %}
+{% block content %}
+<div class="container-fluid">
+<h2>Manajemen Order</h2>
+<div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOrderModal">
+        <i class="fas fa-plus"></i> Tambah Order Manual
+    </button>
+    <div class="d-flex gap-2">
+        <form method="GET" class="d-flex gap-2">
+            <input type="text" class="form-control" name="search" 
+            placeholder="Cari pelanggan..." value="{{ request.args.get('search', '') }}">
+            <select class="form-select" name="status" style="width: auto;">
+                <option value="">Semua Status</option>
+                <option value="Gagal" {% if request.args.get('status') == 'Gagal' %}selected{% endif %}>Gagal</option>
+                <option value="Bayar Sekarang" {% if request.args.get('status') == 'Bayar Sekarang' %}selected{% endif %}>Bayar Sekarang</option>
+                <option value="Dalam Proses" {% if request.args.get('status') == 'Dalam Proses' %}selected{% endif %}>Dalam Proses</option>
+                <option value="Siap Diambil" {% if request.args.get('status') == 'Siap Diambil' %}selected{% endif %}>Siap Diambil</option>
+                <option value="Selesai" {% if request.args.get('status') == 'Selesai' %}selected{% endif %}>Selesai</option>
+            </select>
+            <select class="form-select" name="customer_type" style="width: auto;">
+                <option value="">Semua Customer</option>
+                <option value="offline" {% if request.args.get('customer_type') == 'offline' %}selected{% endif %}>Offline</option>
+                <option value="online" {% if request.args.get('customer_type') == 'online' %}selected{% endif %}>Online</option>
+            </select>
+            <input type="date" class="form-control date-picker" name="start_date" 
+            placeholder="{{ 'dd/mm/yyyy' if not request.args.get('start_date') else request.args.get('start_date') }}"                    
+            value="{{ request.args.get('start_date', '') }}" >
+            <input type="date" class="form-control date-picker" name="end_date" 
+            placeholder="{{ 'dd/mm/yyyy' if not request.args.get('end_date') else request.args.get('end_date') }}"                    
+            value="{{ request.args.get('end_date', '') }}" >
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </div>
+</div>
+
+    <!-- Total Revenue Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-titleorder">Total Pendapatan</h2>
+            <h3>Rp {{ "{:,.0f}".format(total_revenue).replace(",", ".") }}</h3>
+            <!-- 
+                <h2 class="card-titleorder">Total Awal</h2>
+                <h3>Rp {{ "{:,.0f}".format(total_awal_test).replace(",", ".") }}</h3>
+            -->
+        </div>
+    </div>
+
+    <!-- Tabel Orders -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID Pesanan</th>
+                    <th>User / Nama</th>
+                    <th>Whatsapp</th>
+                    <th>Status</th>
+                    <th>Pesanan Dibuat</th>
+                    <th>Pesanan Selesai</th>
+                    <th>Total Awal</th>
+                    <th>Pengembalian</th>  
+                    <th>Total Akhir</th> 
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items.items %}
+                {% set initial_total = item.total %}
+                {% set returns_total = namespace(value=0) %}
+                {% for detail in item.details %}
+                    {% for return_order in detail.return_request %}
+                        {% if return_order.status == 'Selesai' %}
+                            {% set returns_total.value = returns_total.value + (detail.price * return_order.quantity) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                {% set final_total = initial_total - returns_total.value %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <div class="fw-bold">{{  item.user.full_name if item.is_offline else item.user.username }}</div>
+                                <div class="text-muted small">{{  item.customer_name if item.is_offline else item.user.full_name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="https://wa.me/{{ item.customer_phone if item.is_offline else item.user.phone }}" 
+                           target="_blank" class="text-decoration-none">
+                            {{ item.customer_phone if item.is_offline else item.user.phone }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm status-btn status-{{ item.status.lower().replace(' ', '-') }} dropdown-toggle" 
+                                    type="button" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                    {{ item.status }}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <form action="{{ url_for('admin.update_order_status', order_id=item.id) }}" method="POST">
+                                        <input type="hidden" name="new_status" value="Gagal">
+                                        <button type="submit" class="dropdown-item">Gagal</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form action="{{ url_for('admin.update_order_status', order_id=item.id) }}" method="POST">
+                                        <input type="hidden" name="new_status" value="Bayar Sekarang">
+                                        <button type="submit" class="dropdown-item">Bayar Sekarang</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form action="{{ url_for('admin.update_order_status', order_id=item.id) }}" method="POST">
+                                        <input type="hidden" name="new_status" value="Dalam Proses">
+                                        <button type="submit" class="dropdown-item">Dalam Proses</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form action="{{ url_for('admin.update_order_status', order_id=item.id) }}" method="POST">
+                                        <input type="hidden" name="new_status" value="Siap Diambil">
+                                        <button type="submit" class="dropdown-item">Siap Diambil</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form action="{{ url_for('admin.update_order_status', order_id=item.id) }}" method="POST">
+                                        <input type="hidden" name="new_status" value="Selesai">
+                                        <button type="submit" class="dropdown-item">Selesai</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                    <td>{{ item.date_added.strftime('%d-%m-%Y, %H:%M') }}</td>
+                    <td>
+                        {% if item.completed_at %}
+                            {{ item.completed_at.strftime('%d-%m-%Y, %H:%M') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>Rp {{ "{:,.0f}".format(initial_total).replace(",", ".") }}</td>
+                    <td class="text-danger">
+                        {% if returns_total.value > 0 %}
+                            Rp {{ "{:,.0f}".format(returns_total.value).replace(",", ".") }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>Rp {{ "{:,.0f}".format(final_total).replace(",", ".") }}</td>
+                    <td>
+                        <button id="qwe" class="btn btn-sm btn-primary show-details-btn" 
+                                data-order-id="{{ item.id }}" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#orderDetailsModal">
+                            <i class="fas fa-eye"></i> 
+                        </button>
+                        {% if item.is_offline and item.status == 'Selesai' %}
+                            {% for detail in item.details %}
+                                {% if detail.variant.variant_type != 'tabung_kosong' and detail.quantity > detail.returned_quantity %}
+                                    <button id="qwe" class="btn btn-sm btn-warning" 
+                                            onclick="showOfflineReturnModal('{{ detail.id }}', '{{ detail.variant.variant_name }}', {{ detail.quantity }}, {{ detail.returned_quantity }})">
+                                        <i class="fas fa-undo"></i> 
+                                    </button>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        <!-- <button class="btn btn-sm btn-danger delete-order-btn" 
+                                data-order-id="{{ item.id }}">
+                            <i class="fas fa-trash"></i> 
+                        </button>
+                    -->
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div>
+            Menampilkan {{ items.first }} - {{ items.last }} dari {{ items.total }} pesanan
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination ">
+                {% if items.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.manage_orders', 
+                    page=page_num, 
+                    start_date=request.args.get('start_date'),
+                    end_date=request.args.get('end_date'),
+                    status=request.args.get('status'),
+                    customer_type=request.args.get('customer_type')) }}"
+                    aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in items.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == items.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.manage_orders', 
+                                page=page_num, 
+                                start_date=request.args.get('start_date'),
+                                end_date=request.args.get('end_date'),
+                                status=request.args.get('status'),
+                                customer_type=request.args.get('customer_type'),
+                                search=request.args.get('search')) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if items.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.manage_orders',
+                    page=items.next_num,
+                    start_date=request.args.get('start_date'),
+                    end_date=request.args.get('end_date'),
+                    status=request.args.get('status'),
+                    customer_type=request.args.get('customer_type')) }}" 
+                    aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Pesanan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderDetails" class="p-3">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Add Order Modal -->
+<div class="modal fade" id="addOrderModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Pesanan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.add_order') }}" method="POST">
+                <div class="modal-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="isOfflineOrder" name="is_offline">
+                        <label class="form-check-label" for="isOfflineOrder">
+                            Pembelian Offline
+                        </label>
+                    </div>
+
+                    <div id="onlineCustomerSelect">
+                        <div class="mb-3">
+                            <label class="form-label">Pelanggan Online</label>
+                            <select class="form-select" id="customer_id" name="customer_id">
+                                <option value="">Pilih Pelanggan</option>
+                                {% for user in customers %}
+                                    {% if user.id != 55555 %}
+                                        <option value="{{ user.id }}">{{ user.full_name }} ({{ user.email }})</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="offlineCustomerDetails" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Nama Pelanggan</label>
+                            <input type="text" class="form-control" name="customer_name" placeholder="Opsional">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">No. Telepon</label>
+                            <input type="text" class="form-control" name="customer_phone" placeholder="Opsional">
+                        </div>
+
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Produk</label>
+                        <select class="form-select" id="product_id" name="product_id" onchange="loadVariants(this.value)">
+                            <option value="">Pilih Produk</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}">{{ product.product_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Variant</label>
+                        <select class="form-select" id="variant_id" name="variant_id" onchange="updatePrice()" disabled>
+                            <option value="">Pilih Variant</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Jumlah</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" min="1" required onchange="updateTotal()">
+                        <div class="form-text" id="stockInfo"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Total Harga</label>
+                        <div class="form-control" id="totalPrice">Rp 0</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Buat Pesanan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Order Confirmation Modal -->
+<div class="modal fade" id="deleteOrderModal" tabindex="-1" aria-labelledby="deleteOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteOrderModalLabel">Konfirmasi Penghapusan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Apakah anda yakin ingin menghapus data pesanan ini? Setelah dihapus tidak dapat dikembalikan.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteOrderForm" method="POST">
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Offlien Return Modal -->
+<div class="modal fade" id="offlineReturnModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pengembalian Barang (Transaksi Offline)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="offlineReturnForm" method="POST">
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label class="form-label">Jumlah</label>
+                        <input type="number" name="quantity" class="form-control" min="1" required>
+                        <div id="quantityInfo" class="form-text"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alasan Detail</label>
+                        <textarea name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Ajukan Pengembalian</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    // Flash message auto hilang
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        // Order details modal handler
+        const orderDetailsModal = document.getElementById('orderDetailsModal');
+        if (orderDetailsModal) {
+            orderDetailsModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const orderId = button.getAttribute('data-order-id');
+                const detailsContainer = document.getElementById('orderDetails');
+                
+
+
+                // Fetch order details
+                fetch(`/order-details/${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    let detailsHtml = `
+                        <div class="mb-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="mb-3">Informasi Pesanan</h5>
+                                    <p class="mb-2"><strong>ID Pesanan:</strong> ${data.id}</p>
+                                    <p class="mb-2"><strong>Pelanggan:</strong> ${data.customer_name}</p>
+                                    <p class="mb-2"><strong>Tanggal:</strong> ${data.date}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <h5 class="mb-3">Detail Produk</h5>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Produk</th>
+                                            <th>Jumlah</th>
+                                            <th>Harga</th>
+                                            <th>Subtotal</th>
+                                            <th>Barang Dikembalikan</th>
+                                            <th>Nilai Pengembalian</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    
+                    data.items.forEach(item => {
+                        detailsHtml += `
+                            <tr ${item.is_returned ? 'class="table-warning"' : ''}>
+                                <td>${item.variant_name}</td>
+                                <td>${item.quantity}</td>
+                                <td>Rp ${item.price.toLocaleString('id-ID')}</td>
+                                <td>Rp ${item.sub_total.toLocaleString('id-ID')}</td>
+                                <td>${item.returned_quantity > 0 ? item.returned_quantity : '-'}</td>
+                                <td>${item.return_value > 0 ? 'Rp ' + item.return_value.toLocaleString('id-ID') : '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    detailsHtml += `
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-end mt-3">
+                                <h5>Total Setelah Pengembalian: Rp ${data.total.toLocaleString('id-ID')}</h5>
+                            </div>
+                        </div>
+                    `;
+                    
+                    detailsContainer.innerHTML = detailsHtml;
+                })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        detailsContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                Gagal memuat detail pesanan. Error: ${error.message}
+                            </div>
+                        `;
+                    });
+            });
+        }
+
+        // Inisialisasi input tanggal
+        if (!document.getElementById('start_date').value || !document.getElementById('end_date').value) {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            document.getElementById('start_date').value = document.getElementById('start_date').value || firstDay.toISOString().split('T')[0];
+            document.getElementById('end_date').value = document.getElementById('end_date').value || lastDay.toISOString().split('T')[0];
+        }
+    });
+
+    // Offline order handler
+    document.getElementById('isOfflineOrder')?.addEventListener('change', function() {
+        const offlineDetails = document.getElementById('offlineCustomerDetails');
+        const onlineSelect = document.getElementById('onlineCustomerSelect');
+        const customerSelect = document.getElementById('customer_id');
+        
+        if (this.checked) {
+            offlineDetails.style.display = 'block';
+            onlineSelect.style.display = 'none';
+            customerSelect.value = '55555'; 
+        } else {
+            offlineDetails.style.display = 'none';
+            onlineSelect.style.display = 'block';
+            customerSelect.value = '';
+        }
+    });
+
+    // Variant loading handler
+    async function loadVariants(productId) {
+        if (!productId) {
+            document.getElementById('variant_id').innerHTML = '<option value="">Pilih Variant</option>';
+            document.getElementById('variant_id').disabled = true;
+            return;
+        }
+    
+        const response = await fetch(`/get-variants/${productId}`);
+        const variants = await response.json();
+        
+        const variantSelect = document.getElementById('variant_id');
+        variantSelect.innerHTML = '<option value="">Pilih Variant</option>';
+        
+        variants.forEach(variant => {
+            variantSelect.innerHTML += `
+                <option value="${variant.id}" 
+                        data-price="${variant.price}"
+                        data-stock="${variant.stock}">
+                    ${variant.variant_name} (${variant.variant_type})
+                </option>`;
+        });
+        
+        variantSelect.disabled = false;
+        updatePrice();
+    }
+    
+    // Price update handler
+    function updatePrice() {
+        const variantSelect = document.getElementById('variant_id');
+        const selectedOption = variantSelect.options[variantSelect.selectedIndex];
+        const quantity = Number(document.getElementById('quantity').value) || 0;
+        
+        if (selectedOption && selectedOption.value) {
+            const price = Number(selectedOption.dataset.price);
+            const stock = Number(selectedOption.dataset.stock);
+            const total = price * quantity;
+            
+            document.getElementById('totalPrice').textContent = `Rp ${total.toLocaleString('id-ID')}`;
+            document.getElementById('stockInfo').textContent = `Stok tersedia: ${stock}`;
+            
+            if (quantity > stock) {
+                document.getElementById('stockInfo').style.color = 'red';
+                document.getElementById('stockInfo').textContent += ' (Melebihi stok!)';
+            } else {
+                document.getElementById('stockInfo').style.color = '';
+            }
+        } else {
+            document.getElementById('totalPrice').textContent = 'Rp 0';
+            document.getElementById('stockInfo').textContent = '';
+        }
+    }
+    
+    function updateTotal() {
+        updatePrice();
+    }
+
+    // Offline return handler
+    function showOfflineReturnModal(detailId, variantName, totalQuantity, returnedQuantity) {
+        const form = document.getElementById('offlineReturnForm');
+        const quantityInfo = document.getElementById('quantityInfo');
+        const quantityInput = form.querySelector('input[name="quantity"]');
+        
+        form.action = `/request-offline-return/${detailId}`;
+        
+        document.querySelector('#offlineReturnModal .modal-title').textContent = 
+            `Pengembalian Barang: ${variantName}`;
+        
+        const availableQuantity = totalQuantity - returnedQuantity;
+        
+        quantityInput.max = availableQuantity;
+        quantityInput.value = 1;
+        
+        quantityInfo.textContent = `Maksimal pengembalian: ${availableQuantity} barang`;
+        quantityInfo.style.color = '#6c757d'; 
+        
+        form.reset();
+        
+        // Add quantity validasi
+        quantityInput.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value > availableQuantity) {
+                this.value = availableQuantity;
+                quantityInfo.textContent = `Maksimal pengembalian: ${availableQuantity} barang`;
+                quantityInfo.style.color = 'red';
+            } else if (value < 1) {
+                this.value = 1;
+                quantityInfo.textContent = `Minimal pengembalian: 1 barang`;
+                quantityInfo.style.color = 'red';
+            } else {
+                quantityInfo.textContent = `Maksimal pengembalian: ${availableQuantity} barang`;
+                quantityInfo.style.color = '#6c757d';
+            }
+        });
+        
+        // Show modal
+        new bootstrap.Modal(document.getElementById('offlineReturnModal')).show();
+    }
+</script>
+
+<style>
+
+    #qwe {
+        margin-bottom: 0.2rem;
+    }
+
+    .return-status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+    
+    .return-status-process {
+        background-color: rgba(147, 197, 75, 0.2);
+        color: #93C54B;
+        border: 1px solid #93C54B;
+    }
+    
+    .return-status-accepted {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+        border: 1px solid #ffc107;
+    }
+    
+    .return-status-finish {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        border: 1px solid #28a745;
+    }
+    </style>
+{% endblock %}

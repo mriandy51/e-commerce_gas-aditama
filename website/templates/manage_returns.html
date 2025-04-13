@@ -1,0 +1,179 @@
+{% extends 'basedash.html' %}
+{% block content %}
+<div class="container-fluid">
+    <h2>Manajemen Pengembalian Barang</h2>
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mb-4 mt-3">
+        <div class="d-flex gap-2">
+            <form id="filterForm" method="GET" class="d-flex gap-2">
+                <input type="text" class="form-control" name="search" 
+                placeholder="Cari pelanggan..." value="{{ request.args.get('search', '') }}">
+                <select name="status" class="form-select">
+                    <option value="">Semua Status</option>
+                    <option value="Dalam Proses" {% if selected_status == 'Dalam Proses' %}selected{% endif %}>Dalam Proses</option>
+                    <option value="Diterima" {% if selected_status == 'Diterima' %}selected{% endif %}>Diterima</option>
+                    <option value="Ditolak" {% if selected_status == 'Ditolak' %}selected{% endif %}>Ditolak</option>
+                    <option value="Selesai" {% if selected_status == 'Selesai' %}selected{% endif %}>Selesai</option>
+                </select>
+                <input type="date" class="form-control date-picker" name="start_date" 
+                placeholder="{{ 'dd/mm/yyyy' if not request.args.get('start_date') else request.args.get('start_date') }}"                    
+                value="{{ request.args.get('start_date', '') }}" >
+                <input type="date" class="form-control date-picker" name="end_date" 
+                placeholder="{{ 'dd/mm/yyyy' if not request.args.get('end_date') else request.args.get('end_date') }}"                    
+                value="{{ request.args.get('end_date', '') }}" >
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <!--  Table Return Barang -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID Pengembalian</th>
+                    <th>Produk</th>
+                    <th>Pelanggan</th>
+                    <th>Jumlah</th>
+                    <th>Alasan</th>
+                    <th>Tanggal Pengajuan</th>
+                    <th>Tipe</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+    <tbody>
+        {% for return in returns %}
+        <tr>
+            <td>#{{ return.id }}</td>
+            <td>
+                {{ return.order_detail.variant.main_product.product_name }} - 
+                {{ return.order_detail.variant.variant_name }}
+                {% if return.is_offline_return %}
+                <br>
+                <span class="badge bg-info">Offline Return</span>
+                <div>
+                    <small>Pelanggan: {{ return.customer_name }}</small>
+                    {% if return.customer_phone %}
+                    <br>
+                    <small>Telp: {{ return.customer_phone }}</small>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </td>
+            <td>{{ return.order_detail.order.customer_name }}</td>
+            <td>{{ return.quantity }}</td>
+            <td>{{ return.reason }}</td>
+            <td>{{ return.date_requested.strftime('%d %B %Y, %H:%M') }}</td>
+            <td> {{ 'Offline' if return.order_detail.order.is_offline else 'Online' }}
+            <td>
+                <form method="POST" action="{{ url_for('admin.update_return_status', return_id=return.id) }}" class="d-inline">
+                    <select name="status" class="form-select form-select-sm" 
+                        onchange="this.form.submit()" 
+                        {% if return.status == 'Selesai' %}disabled{% endif %}
+                        style="width: auto;">
+                        <option value="Dalam Proses" {% if return.status == 'Dalam Proses' %}selected{% endif %}>Dalam Proses</option>
+                        <option value="Diterima" {% if return.status == 'Diterima' %}selected{% endif %}>Diterima</option>
+                        <option value="Ditolak" {% if return.status == 'Ditolak' %}selected{% endif %}>Ditolak</option>
+                        <option value="Selesai" {% if return.status == 'Selesai' %}selected{% endif %}>Selesai</option>
+                    </select>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div>
+            Showing {{ returns.first }} - {{ returns.last }} of {{ returns.total }} returns
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if returns.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.manage_returns', 
+                    page=returns.prev_num, 
+                    status=selected_status,
+                    start_date=start_date,
+                    end_date=end_date) }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in returns.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == returns.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.manage_returns', 
+                            page=page_num,
+                            status=selected_status,
+                            start_date=start_date,
+                            end_date=end_date) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if returns.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.manage_returns', 
+                    page=returns.next_num,
+                    status=selected_status,
+                    start_date=start_date,
+                    end_date=end_date) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<style>
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-process { =
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-accepted { =
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-rejected { =
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-finish {=
+    background: #dcfce7;
+    color: #166534;
+}
+
+.table-container {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

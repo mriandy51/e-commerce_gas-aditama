@@ -1,0 +1,568 @@
+/* Dashboard Layout */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+:root {
+  --body-font: "sans-serif";
+}
+/* Sidebar Styles */
+.sidebar {
+  width: 250px;
+  background: #2c3e50;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.sidebar-header {
+  font-family: 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid #34495e;
+}
+
+.sidebar-menu {
+  padding: 0;
+  list-style: none;
+}
+
+.menu-item {
+  margin: 5px 0;
+}
+
+.menu-item a {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  color: #fff;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.menu-item a:hover, .menu-item.active a {
+  background: #34495e;
+}
+
+.menu-item i {
+  width: 20px;
+  margin-right: 10px;
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  background: #f8f9fa;
+}
+
+.form-control.date-picker {
+  width: 160px;
+}
+
+
+
+
+.content-header {
+  background: #fff;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.content-wrapper {
+  padding: 20px;
+}
+
+.menu-toggle {
+  display: none;
+}
+
+/* User Management Table */
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.user-table th {
+  background: #f8f9fa;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.user-table td {
+  padding: 12px;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Form Styles */
+.form-container {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+  display: none;
+}
+
+.form-container.active {
+  display: block;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  border-color: #2c3e50;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.25);
+}
+
+/* Buttons */
+.btn-primary {
+  background: #2c3e50;
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #34495e;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sidebar {
+      position: fixed;
+      left: -250px;
+      height: 100%;
+      z-index: 1000;
+  }
+
+  .sidebar-collapsed .sidebar {
+      left: 0;
+  }
+
+  .menu-toggle {
+      display: block;
+  }
+}
+
+/* Flash Messages */
+.alert {
+  margin: 20px;
+}
+
+.product-thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.stock-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.stock-high {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.stock-medium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.stock-low {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.btn-group .btn {
+  margin-right: 4px;
+}
+
+.table-container {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+  border-bottom-width: 2px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+
+/* Orders Dashboard Styles */
+.status-btn {
+  min-width: 120px;
+  text-align: center;
+  border: none;
+}
+
+.status-gagal {
+  background-color:rgb(44, 41, 41);
+  color:rgb(252, 252, 252);
+}
+.status-bayar-sekarang {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-dalam-proses {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-siap-diambil {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-selesai {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.order-item-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.total-section {
+  border-top: 2px solid #e5e7eb;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.pagination {
+  margin-bottom: 0;
+}
+
+.pagination .page-link {
+  color: rgb(0, 0, 0);
+  background-color: #ffffff;
+  border-color: black;
+}
+
+
+.pagination .page-item.active .page-link {
+  background-color: #2c3e50;
+  border-color: black;
+  color: rgb(255, 255, 255);
+}
+
+
+.card {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.card-titleorder {
+  color: #64748b;
+  font-size: 1.6rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.table-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-summary {
+  padding: 1rem 0;
+}
+
+.count-info, .revenue-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.count-info .label, .revenue-info .label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.count-info .value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #141921;
+}
+
+.total-revenue {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.report-card h3 {
+  color: #1e293b;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.total-amount {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #059669;
+}
+
+.g-4 {
+  --bs-gutter-y: 1.5rem;
+}
+.table td.text-danger {
+  color: #dc2626 !important;
+}
+
+.total-amount {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #059669;
+}
+
+.table th, .table td {
+  padding: 0.75rem;
+  vertical-align: middle;
+}
+
+
+/* 
+Gastruck
+*/
+
+.truck-status-card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.truck-status-card:hover {
+  transform: translateY(-5px);
+}
+
+.truck-icon-container {
+  text-align: center;
+  font-size: 3rem;
+  color: #4a5568;
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+.status-item label {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.status-item span {
+  font-weight: 500;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-available {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-delivering {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-unavailable {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.truck-icon-container i {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.modal .form-label {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+/* Report Styles */
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.date-filter {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.report-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 0rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.total-amount {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #198754;
+}
+
+.status-summary, .complaint-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.status-item, .complaint-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.status-label, .complaint-status {
+  font-weight: 500;
+}
+
+.status-count, .complaint-count {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.nav-tabs {
+  margin-bottom: 1.5rem;
+}
+
+
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+
+/* Return Report Styles */
+.return-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.return-status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  transition: transform 0.2s ease;
+}
+
+.return-status-item:hover {
+  transform: translateY(-2px);
+  background: #e9ecef;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.return-percentage {
+  font-weight: 500;
+}

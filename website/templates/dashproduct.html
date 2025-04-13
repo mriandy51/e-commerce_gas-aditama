@@ -1,0 +1,575 @@
+{% extends 'basedash.html' %}
+{% block content %}
+
+<div class="container-fluid">
+    <h2>Manajemen Produk</h2>
+    {% if current_user.roles != 4 %}
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="fas fa-plus"></i> Tambah Produk
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Grid Produk -->
+    <div class="row g-4">
+        {% for product in products %}
+        <div class="col-md-6 col-lg-4">
+            <div class="product-card card h-100">
+                <div class="position-relative">
+                    <div class="product-status position-absolute top-0 end-0 m-2">
+                    </div>
+                    <img src="{{ url_for('admin.get_image', filename=product.product_picture.split('/')[-1]) }}" 
+                         class="card-img-top product-image" 
+                         alt="{{ product.product_name }}">
+                    <div class="product-actions">
+                        {% if current_user.roles != 4 %}
+                        <button class="btn btn-primary btn-sm" onclick="showEditProduct({{ product.id }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="showDeleteConfirmation({{ product.id }})">
+                            <i class="fa fa-close"></i>
+                        </button>
+                        <button class="btn btn-{{ 'warning' if product.is_active else 'success' }} btn-sm" 
+                                onclick="toggleProductStatus({{ product.id }}, {{ product.is_active|tojson }})">
+                            <i class="fas fa-{{ 'ban' if product.is_active else 'check' }}"></i>
+                            {{ '' if product.is_active else '' }}
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-primary btn-sm" 
+                        onclick="showProductNotificationModal({{ product.id }}, '{{ product.product_name }}')">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <h5 class="card-title d-flex justify-content-between">
+                        {{ product.product_name }}
+                        {% if current_user.roles != 4 %}
+                        <button class="btn btn-sm btn-success" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#addVariantModal" 
+                                data-product-id="{{ product.id }}">
+                            <i class="fas fa-plus"></i> Tambah Varian
+                        </button>
+                        {% endif %}
+                    </h5>
+
+                    <!-- Tabel Varian -->
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Varian</th>
+                                    <th>Stok</th>
+                                    <th>Harga</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for variant in product.variants %}
+                                <tr>
+                                    <td>{{ variant.variant_name }}
+                                    <br>
+                                        <span class="badge {% if variant.variant_type == 'tabung_kosong' %}bg-primary
+                                                         {% elif variant.variant_type == 'refill' %}bg-success
+                                                         {% else %}bg-danger{% endif %}">
+                                            {{ variant.variant_type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ variant.stock }}</td>
+                                    <td>Rp {{ "{:,.0f}".format(variant.price).replace(",", ".") }}</td>
+                                    <td>
+                                        {% if variant.variant_type == 'tabung_bocor'%}
+                                        <button class="btn btn-info btn-sm" id="qwe" onclick="showconvertGasBocorModal({{ product.id }}, {{ variant.stock }}) ">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% if variant.variant_type == 'refill' %}
+                                        <button class="btn btn-primary btn-sm" id="qwe"
+                                                onclick="showStockModal({{ variant.id }}, '{{ variant.variant_name }}', {{ variant.stock }}, 'refill')">
+                                            <i class="fas fa-tools"></i>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if variant.variant_type == 'tabung_kosong' %}
+                                        <button class="btn btn-primary btn-sm" id="qwe"
+                                                onclick="showStockModal({{ variant.id }}, '{{ variant.variant_name }}', {{ variant.stock }}, 'kosong')">
+                                            <i class="fas fa-tools"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% if current_user.roles != 4 %}
+                                        <button class="btn btn-primary btn-sm" id="qwe" onclick="showEditVariant({{ variant.id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button id="qwe" class="btn btn-{{ 'warning' if variant.is_active else 'success' }} btn-sm " 
+                                        onclick="toggleVariantStatus({{ variant.id }}, {{ variant.is_active|tojson }})">
+                                        <i class="fas fa-{{ 'ban' if variant.is_active else 'check' }}"></i>
+                                        </button>
+                                        <button id="qwe" class="btn btn-danger btn-sm" onclick="showDeleteVariantConfirmation({{ variant.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif%}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Produk Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" enctype="multipart/form-data">
+                {{ product_form.hidden_tag() }}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Produk</label>
+                        {{ product_form.product_name(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gambar Produk</label>
+                        {{ product_form.product_picture(class="form-control", accept="image/jpeg,image/jpg,image/png") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    {{ product_form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Variant Modal -->
+<div class="modal fade" id="addVariantModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Varian</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="variantForm" method="POST">
+                {{ variant_form.hidden_tag() }}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Variant</label>
+                        {{ variant_form.variant_name(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipe Variant</label>
+                        {{ variant_form.variant_type(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Harga</label>
+                        {{ variant_form.price(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stok</label>
+                        {{ variant_form.stock(class="form-control") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    {{ variant_form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Produk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editProductForm" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="_method" value="PUT">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Produk</label>
+                        <input type="text" class="form-control" name="product_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gambar Produk</label>
+                        <input type="file" class="form-control" name="product_picture" accept="image/jpeg,image/jpg,image/png">
+                        <small class="form-text text-muted">Biarkan kosong jika tidak ingin mengubah gambar</small>
+                    </div>
+                    <div class="current-image mt-2">
+                        <label class="form-label">Gambar Saat Ini:</label>
+                        <img id="currentProductImage" src="" alt="Current product image" 
+                             style="max-width: 100px; display: block; margin-top: 5px;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Update Produk</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Variant Modal -->
+<div class="modal fade" id="editVariantModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Variant</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editVariantForm" method="POST">
+                <input type="hidden" name="_method" value="PUT">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Variant</label>
+                        <input type="text" class="form-control" name="variant_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipe Variant</label>
+                        <select class="form-control" name="variant_type" required>
+                            <option value="refill">Isi Ulang</option>
+                            <option value="tabung_kosong">Tabung Kosong</option>
+                            <option value="tabung_bocor">Tabung Bocor</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Harga</label>
+                        <input type="number" class="form-control" name="price" min="0" required>
+                    </div>
+                    
+                    <!-- 
+                    <div class="mb-3">
+                        <label class="form-label">Stok</label>
+                        <input type="number" class="form-control" name="stock" min="0" required>
+                    </div>
+                    -->
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Update Variant</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Convert Gas Bocor Modal -->
+<div class="modal fade" id="convertGasBocorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konversi Tabung Bocor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="convertGasBocorForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Jumlah Tabung</label>
+                        <input type="number" name="quantity" class="form-control" 
+                               min="1" required>
+                        <div class="form-text" id="stockInfo"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Konversi Ke</label>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success flex-grow-1" 
+                                    formaction="" id="convertToFilled">
+                                Tabung Isi
+                            </button>
+                            <button type="submit" class="btn btn-secondary flex-grow-1" 
+                                    formaction="" id="convertToEmpty">
+                                Tabung Kosong
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Product Notification Modal -->
+<div class="modal fade" id="productNotificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kirim Notifikasi Stok</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.send_product_notification') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="product_id" id="notificationProductId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Product</label>
+                        <input type="text" id="notificationProductName" class="form-control" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Pesan Notifikasi</label>
+                        <textarea name="notification_message" class="form-control" 
+                                 rows="3" required></textarea>
+                        <div class="form-text">
+                            Masukkan pesan notifikasi yang akan dikirim ke semua user
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Kirim Notifikasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Stok -->
+<div class="modal fade" id="stockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kelola Stok</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="stockForm" method="POST">
+                <div class="modal-body">
+                    <p id="variantNameStock" class="mb-3 fw-bold"></p>
+                    <p id="currentStockInfo" class="text-muted"></p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Jenis Operasi</label>
+                        <select id="stockOperation" class="form-select" required>
+                            <option value="">Pilih Operasi</option>
+                            <option value="add">Tambah Stok</option>
+                            <option value="subtract">Kurang Stok</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Jumlah</label>
+                        <input type="number" name="quantity" class="form-control" min="1" required>
+                        <div class="form-text" id="stockInfo"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.product-card {
+    transition: transform 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-image {
+    height: 200px;
+    object-fit: contain;
+    padding: 1rem;
+}
+
+.product-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.table td {
+    vertical-align: middle;
+    
+}
+
+#qwe {
+    margin-bottom: 0.2rem;
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 0.35em 0.65em;
+}
+
+.inactive {
+    opacity: 0.7;
+}
+</style>
+
+<script>
+
+// Handle Add Variant Modal
+document.addEventListener('DOMContentLoaded', function() {
+    const addVariantModal = document.getElementById('addVariantModal');
+    addVariantModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const productId = button.getAttribute('data-product-id');
+        const form = document.getElementById('variantForm');
+        form.action = `/add-variant/${productId}`;
+    });
+});
+
+function showDeleteConfirmation(productId) {
+    if (confirm('Yakin ingin menghapus produk ini? Semua variant akan ikut terhapus.')) {
+        window.location.href = `/delete-product/${productId}`;
+    }
+}
+
+function showDeleteVariantConfirmation(variantId) {
+    if (confirm('Yakin ingin menghapus variant ini?')) {
+        window.location.href = `/delete-variant/${variantId}`;
+    }
+}
+
+function showEditProduct(productId) {
+    fetch(`/get-product/${productId}`)
+        .then(response => response.json())
+        .then(data => {
+            const form = document.getElementById('editProductForm');
+            form.action = `/update-product/${productId}`;
+            form.querySelector('input[name="product_name"]').value = data.product_name;
+            document.getElementById('currentProductImage').src = data.product_picture;
+            new bootstrap.Modal(document.getElementById('editProductModal')).show();
+        });
+}
+
+function showEditVariant(variantId) {
+    fetch(`/get-variant/${variantId}`)
+        .then(response => response.json())
+        .then(data => {
+            const form = document.getElementById('editVariantForm');
+            form.action = `/update-variant/${variantId}`;
+            form.querySelector('input[name="variant_name"]').value = data.variant_name;
+            form.querySelector('select[name="variant_type"]').value = data.variant_type;
+            form.querySelector('input[name="price"]').value = data.price;
+            //form.querySelector('input[name="stock"]').value = data.stock;
+            new bootstrap.Modal(document.getElementById('editVariantModal')).show();
+        });
+}
+
+setTimeout(function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(function(alert) {
+        alert.remove();
+    });
+}, 5000);
+
+function toggleProductStatus(productId, currentStatus) {
+    if (confirm(`Anda yakin ingin ${currentStatus ? 'menonaktifkan' : 'mengaktifkan'} produk ini?`)) {
+        window.location.href = `/toggle-product-status/${productId}`;
+    }
+}
+
+function toggleVariantStatus(variantId, currentStatus) {
+    if (confirm(`Anda yakin ingin ${currentStatus ? 'menonaktifkan' : 'mengaktifkan'} variant ini?`)) {
+        window.location.href = `/toggle-variant-status/${variantId}`;
+    }
+}
+
+
+function showconvertGasBocorModal(productId, currentStock) {
+    const modal = document.getElementById('convertGasBocorModal');
+    const form = document.getElementById('convertGasBocorForm');
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const stockInfo = document.getElementById('stockInfo');
+    const convertToFilled = document.getElementById('convertToFilled');
+    const convertToEmpty = document.getElementById('convertToEmpty');
+    
+    // Set max quantity dan info stok
+    quantityInput.max = currentStock;
+    quantityInput.value = 1;
+    stockInfo.textContent = `Stok tabung bocor tersedia: ${currentStock}`;
+    
+    // Set action link url
+    convertToFilled.formAction = `/convert-gas-bocor/${productId}/isi`;
+    convertToEmpty.formAction = `/convert-gas-bocor/${productId}/kosong`;
+    
+    // Show modal
+    new bootstrap.Modal(modal).show();
+}
+
+//  validasi input quantity
+document.querySelector('input[name="quantity"]').addEventListener('input', function() {
+    const max = parseInt(this.max);
+    const value = parseInt(this.value);
+    if (value > max) {
+        this.value = max;
+    }
+});
+
+
+
+function showStockModal(variantId, variantName, currentStock, type) {
+    const modal = document.getElementById('stockModal');
+    const form = document.getElementById('stockForm');
+    const operationSelect = document.getElementById('stockOperation');
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const stockInfo = document.getElementById('stockInfo');
+    
+    document.getElementById('variantNameStock').textContent = variantName;
+    document.getElementById('currentStockInfo').textContent = `Stok saat ini: ${currentStock}`;
+    
+    form.reset();
+    stockInfo.textContent = '';
+    
+    operationSelect.onchange = function() {
+        const operation = this.value;
+        quantityInput.value = '';
+        
+        if (operation === 'add' && type === 'refill') {
+            form.action = `/add-refill-stock/${variantId}`;
+        } else if (operation === 'add' && type === 'kosong') {
+            form.action = `/add-empty-tank-stock/${variantId}`;
+        } else if (operation === 'subtract') {
+            form.action = `/subtract-stock/${variantId}`;
+            stockInfo.textContent = `Maksimal pengurangan: ${currentStock}`;
+            quantityInput.max = currentStock;
+        }
+    };
+    
+    new bootstrap.Modal(modal).show();
+}
+
+document.querySelector('#addRefillModal input[name="quantity"]')?.addEventListener('input', function() {
+    const max = parseInt(this.max);
+    const value = parseInt(this.value);
+    if (value > max) {
+        this.value = max;
+    }
+});
+
+function showProductNotificationModal(productId, productName) {
+    const modal = document.getElementById('productNotificationModal');
+    document.getElementById('notificationProductId').value = productId;
+    document.getElementById('notificationProductName').value = productName;
+    new bootstrap.Modal(modal).show();
+}
+
+
+</script>
+{% endblock %}

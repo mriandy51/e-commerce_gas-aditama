@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript"
+            src="https://app.sandbox.midtrans.com/snap/snap.js"
+            data-client-key="SB-Mid-client-z_VKWl4iEpLX2i1q"></script>
+    <title>Pembayaran</title>
+    <style>
+        body {
+            background-color: hsl(228, 6%, 8%);
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const snapToken = "{{ snap_token }}";
+        snap.pay(snapToken, {
+            onSuccess: function(result) {
+                console.log('Payment success:', result);
+                window.location.href = "/orders";
+            },
+            onPending: function(result) {
+                console.log('Payment pending:', result);
+                window.location.href = "/orders";
+            },
+            onError: function(result) {
+                console.log('Payment error:', result);
+                alert('Pembayaran gagal. Silakan coba lagi.');
+                window.location.href = "/orders";
+            }
+        });
+    </script>
+</body>
+</html>

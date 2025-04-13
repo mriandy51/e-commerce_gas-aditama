@@ -1,0 +1,197 @@
+{% extends 'basedash.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="report-header">
+        <h2>Laporan</h2>
+        <form id="dateFilterForm" class="date-filter">
+            <a href="{{ url_for('report.generate_pdf', start_date=start_date, end_date=end_date) }}" class="btn btn-primary">
+                <i class="fas fa-file-pdf"></i> Cetak Laporan Keuangan
+            </a>
+            <input type="date" class="form-control date-picker" name="start_date" 
+            placeholder="{{ 'dd/mm/yyyy' if not request.args.get('start_date') else request.args.get('start_date') }}"                    
+            value="{{ request.args.get('start_date', '') }}" >
+            <input type="date" class="form-control date-picker" name="end_date" 
+            placeholder="{{ 'dd/mm/yyyy' if not request.args.get('end_date') else request.args.get('end_date') }}"                    
+            value="{{ request.args.get('end_date', '') }}" >
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#financial">Laporan Keuangan</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#complaints">Laporan Keluhan</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#returns">Laporan Pengembalian</a>
+        </li>
+    </ul>
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Tab Keuangan -->
+        <div id="financial" class="tab-pane active">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="report-card">
+                        <h3>Transaksi Online</h3>
+                        <div class="transaction-summary">
+                            <div class="count-info">
+                                <span class="label">Total Transaksi:</span>
+                                <span class="value">{{ online_count }}</span>
+                            </div>
+                            <div class="count-info">
+                                <span class="label">Total Pengembalian:</span>
+                                <span class="value">Rp {{ "{:,.0f}".format(total_returns_online).replace(",", ".") }}</span>
+                            </div>
+                            <div class="revenue-info">
+                                <span class="label">Total Pendapatan:</span>
+                                <span class="total-amount">Rp {{ "{:,.0f}".format(online_revenue).replace(",", ".") }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="col-md-6">
+                    <div class="report-card">
+                        <h3>Transaksi Offline</h3>
+                        <div class="transaction-summary">
+                            <div class="count-info">
+                                <span class="label">Total Transaksi:</span>
+                                <span class="value">{{ offline_count }}</span>
+                            </div>
+                            <div class="count-info">
+                                <span class="label">Total Pengembalian:</span>
+                                <span class="value">Rp {{ "{:,.0f}".format(total_returns_offline).replace(",", ".") }}</span>
+                            </div>
+                            <div class="revenue-info">
+                                <span class="label">Total Pendapatan:</span>
+                                <span class="total-amount">Rp {{ "{:,.0f}".format(offline_revenue).replace(",", ".") }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- Total Revenue -->
+                <div class="report-card mt-3">
+                    <h3 class="mb-2">Total Pendapatan Keseluruhan</h3>
+                    <div class="text-center">
+                        <span class="total-amount">Rp {{ "{:,.0f}".format(total_revenue).replace(",", ".") }}</span>
+                    </div>
+                </div>
+                <!-- Ringkasan Status Pesanan -->
+                <div class="col-12">
+                    <div class="report-card">
+                        <h3>Ringkasan Status Order</h3>
+                        <div class="status-summary">
+                            {% for status, count in status_summary %}
+                            <div class="status-item">
+                                <span class="status-label">{{ status }}</span>
+                                <span class="status-count">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Complaint -->
+        <div id="complaints" class="tab-pane fade">
+            <div class="report-card">
+                <h3>Ringkasan Status Keluhan</h3>
+                <div class="complaint-summary">
+                    {% for status, count in complaint_summary %}
+                    <div class="complaint-item">
+                        <span class="complaint-status">{{ status }}</span>
+                        <span class="complaint-count">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    
+        <div id="returns" class="tab-pane fade">
+            <div class="report-card">
+                <h3>Ringkasan Status Pengembalian</h3>
+                <div class="return-summary">
+                    {% for status, count in return_summary %}
+                    <div class="return-status-item">
+                        <span class="status-label">{{ status }}</span>
+                        <span class="status-count">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <h3>Detail Pengembalian per Variant</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Produk</th>
+                                <th>Variant</th>
+                                <th>Tipe</th>
+                                <th>Total Terjual</th>
+                                <th>Total Dikembalikan</th>
+                                <th>Persentase Pengembalian</th>
+                                <th>Nilai Pengembalian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for variant in variant_returns %}
+                            {% if variant.total_sold > 0 or variant.total_returns > 0 %}
+                            <tr>
+                                <td>{{ variant.product_name }}</td>
+                                <td>{{ variant.variant_name }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if variant.variant_type == 'default' 
+                                                        else 'success' if variant.variant_type == 'refill'
+                                                        else 'warning' }}">
+                                        {{ variant.variant_type }}
+                                    </span>
+                                </td>
+                                <td>{{ variant.total_sold }}</td>
+                                <td>{{ variant.total_returns }}</td>
+                                <td>{{ "%.2f"|format(variant.return_percentage) }}%</td>
+                                <td>Rp {{ "{:,.0f}".format(variant.return_value).replace(",", ".") }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script> 
+
+</script>
+
+<style>
+    .card {
+        margin-bottom: 1rem; 
+    }
+    
+    .row.g-4 {
+        --bs-gutter-y: 1rem; 
+    }
+    
+    .report-card {
+        padding: 1rem;
+        margin-bottom: 1rem; 
+    }
+    
+    .transaction-summary {
+        padding: 0.5rem 0;
+    }
+    
+    .count-info, .revenue-info {
+        margin: 0.5rem 0;
+    }
+    
+    </style>
+{% endblock %}

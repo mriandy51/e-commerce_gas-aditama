@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Cart{% endblock %}
+
+{% block content %}
+<section class="cart-section">
+    {% if cart %}
+    <div class="cart-container">
+        <h1 class="cart-title">Keranjang Belanja</h1>
+        
+        <div class="cart-layout">
+            <div class="cart-items">
+                {% for item in cart %}
+                <div class="cart-item">
+                    <div class="item-image">
+                        <img src="{{ item.variant.main_product.product_picture }}" alt="{{ item.variant.variant_name }}">
+                    </div>
+                    
+                    <div class="item-details">
+                        <h3 class="item-name">{{ item.variant.variant_name }}</h3>
+
+                        <div class="item-price">Rp {{ "{:,.0f}".format(item.variant.price) }}</div>
+                        
+                        <div class="quantity-control">
+                            <a href="{{ url_for('views.minus_cart', cart_id=item.id) }}" class="quantity-btn">
+                                <i class="ri-subtract-line"></i>
+                            </a>
+                            <span class="quantity">{{ item.quantity }}</span>
+                            <a href="{{ url_for('views.plus_cart', cart_id=item.id) }}" class="quantity-btn">
+                                <i class="ri-add-line"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="item-actions">
+                        <div class="item-subtotal">
+                            Rp {{ "{:,.0f}".format(item.variant.price * item.quantity) }}
+                        </div>
+                        <a href="{{ url_for('views.remove_cart', cart_id=item.id) }}" class="remove-btn">
+                            <i class="ri-delete-bin-line"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="cart-summary">
+                <h2 class="summary-title">Data Pesanan</h2>
+                
+                <div class="summary-items">
+                    {% for item in cart %}
+                    <div class="summary-item">
+                        <span class="item-info">
+                            {{ item.variant.variant_name }} 
+
+                            (x{{ item.quantity }})
+                        </span>
+                        <span class="item-total"> {{ "{:,.0f}".format(item.variant.price * item.quantity) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="summary-total">
+                    <span>Total Harga</span>
+                    <span class="total-amount">Rp {{ "{:,.0f}".format(total) }}</span>
+                </div>
+                
+                <a href="/place-order" class="checkout-btn">
+                    Pesan Sekarang <i class="ri-arrow-right-line"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-cart">
+        <i class="ri-shopping-cart-line"></i>
+        <h2>Keranjang Anda Kosong</h2>
+        <p>Anda belum menambahkan barang apapun saat ini.</p>
+        <a href="/shop" class="shop-btn">
+            Pesan Barang <i class="ri-arrow-right-line"></i>
+        </a>
+    </div>
+    {% endif %}
+</section>
+
+
+{% endblock %}

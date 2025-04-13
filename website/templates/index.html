@@ -1,0 +1,42 @@
+<!-- prettier-ignore -->
+
+{% extends "base.html" %} {% block title %} Home {% endblock %} 
+
+{% block content %}
+<!-- Home -->
+<section class="home section" id="home">
+  <div class="home_container container grid">
+    <img src="../static/img/homeGas.png" alt="image" class="home_img" />
+
+    <div class="home_data">
+      <h1 class="home_title">
+        SUPPLIER <br />
+        <span>GAS</span> LPG <br />
+        TERJANGKAU <br />
+      </h1>
+
+      <div class="home_description">
+        <p>Situs ini hanya melayani pemesanan saja dan tidak melayani pengiriman, dan
+        untuk pembelian isi gas 3 kg hanya melayani pembelian di toko.
+        </p>
+        <br>
+        <p> Ingin menerima notifikasi informasi pengiriman gas 3 kg? Silahkan klik
+          lonceng merah di pojok kanan bawah dan Allow/Izinkan notifikasi pada situs ini
+        </p>
+      </div>
+
+      <div class="home_buttons">
+        <a href="/shop" class="button">
+          <span>
+            <i class="ri-arrow-right-line"></i>
+          </span>
+          PESAN LPG
+        </a>
+
+        <a href="/info" class="button_link">INFO STOK GAS</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

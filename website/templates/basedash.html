@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashstyle.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                {% if current_user.roles == 3 %}
+                    <h3>Dashboard Kasir</h3>
+                {% elif current_user.roles == 4 %}
+                    <h3>Dashboard Gudang</h3>
+                {% else %}
+                    <h3>Dashboard Admin</h3>
+                {% endif %}
+            </div>
+            <ul class="sidebar-menu">
+                {% if current_user.roles!=4 and current_user.roles!=3  %}
+                    <li class="menu-item {% if request.endpoint == 'admin.manage_users' %}active{% endif %}">
+                        <a href="{{ url_for('admin.manage_users') }}">
+                            <i class="fas fa-users"></i>
+                            <span>Users</span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if current_user.roles!= 3%}
+                    <li class="menu-item {% if request.endpoint == 'admin.manage_shop_items' %}active{% endif %}">
+                        <a href="{{ url_for('admin.manage_shop_items') }}">
+                            <i class="fas fa-box"></i>
+                            <span>Produk</span>
+                        </a>
+                    </li>
+                    <li class="menu-item {% if request.endpoint == 'admin.update_gas_truck' %}active{% endif %}">
+                        <a href="{{ url_for('admin.update_gas_truck') }}">
+                            <i class="fas fa-truck"></i>
+                            <span>Truk Gas</span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if current_user.roles!= 4%}
+                    <li class="menu-item {% if request.endpoint == 'admin.manage_orders' %}active{% endif %}">
+                        <a href="{{ url_for('admin.manage_orders') }}">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>Pesanan</span>
+                        </a>
+                    </li>
+                    <li class="menu-item {% if request.endpoint == 'admin.manage_complaint' %}active{% endif %}">
+                        <a href="{{ url_for('admin.manage_complaint') }}">
+                            <i class="fas fa-comments"></i>
+                            <span>Keluhan</span>
+                        </a>
+                    </li>
+                    <li class="menu-item {% if request.endpoint == 'admin.manage_returns' %}active{% endif %}">
+                        <a href="{{ url_for('admin.manage_returns') }}">
+                            <i class="fas fa-undo"></i>
+                            <span>Return Barang</span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if current_user.roles == 1 or current_user.roles == 2 %}
+                <li class="menu-item {% if request.endpoint == 'report.view_report' %}active{% endif %}">
+                    <a href="{{ url_for('report.view_report') }}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Laporan</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="menu-item">
+                    <a href="/logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Keluar</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-content">
+                    <button id="sidebar-toggle" class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="user-info">
+                        <span>Welcome, {{ current_user.username }}</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Page Content -->
+            <div class="content-wrapper">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const formsWithDateFilters = document.querySelectorAll('form:has(input[type="date"])');
+        formsWithDateFilters.forEach(form => {
+            const startDate = form.querySelector('input[name="start_date"]');
+            const endDate = form.querySelector('input[name="end_date"]');
+            
+            if (startDate && endDate) {
+                form.addEventListener('submit', function(e) {
+                    if ((startDate.value && !endDate.value) || (!startDate.value && endDate.value)) {
+                        e.preventDefault();
+                        alert('Silakan isi kedua tanggal untuk melakukan filter, atau kosongkan keduanya untuk melihat semua data');
+                        return false;
+                    }
+                    
+                });
+    
+                startDate.addEventListener('change', function() {
+                    if (this.value) {
+                        endDate.setAttribute('min', this.value);
+                        endDate.required = true;
+                    } else {
+                        endDate.removeAttribute('min');
+                        endDate.required = false;
+                        endDate.value = ''; // Reset end date kalau kosong
+                    }
+                });
+    
+                endDate.addEventListener('change', function() {
+                    if (this.value) {
+                        startDate.setAttribute('max', this.value);
+                        startDate.required = true;
+                    } else {
+                        startDate.removeAttribute('max');
+                        startDate.required = false;
+                        startDate.value = ''; // Reset start date kalau kosong
+                    }
+                });
+    
+                // Reset kedua input date kalau salah satu kosong
+                ['change', 'keyup'].forEach(eventType => {
+                    startDate.addEventListener(eventType, function() {
+                        if (!this.value) endDate.value = '';
+                    });
+                    endDate.addEventListener(eventType, function() {
+                        if (!this.value) startDate.value = '';
+                    });
+                });
+            }
+        });
+    });
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            document.querySelector('.dashboard-container').classList.toggle('sidebar-collapsed');
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            flatpickr(".date-picker", {
+                dateFormat: "d/m/Y",
+                allowInput: true,
+                locale: {
+                    firstDayOfWeek: 1
+                },
+                defaultDate: this.value || null 
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

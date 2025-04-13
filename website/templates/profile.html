@@ -1,0 +1,29 @@
+{% extends "base.html" %} {% block title %} Profil {% endblock %} 
+
+{% block content %}
+<br><br><br>
+<div class="profil-wrapper">
+  <h1>Halo {{ user.full_name }}</h1><br><br>
+  <div class="profil">
+    <div class="info-box">
+      <h2>Profil</h2>
+      <br>
+      <a class="button" href="/orders" >Cek Pesanan</a>
+      {% if current_user.roles != 0 %}
+      {% if current_user.roles == 1 or current_user.roles == 2 %}
+      <a class="button" href="/dashuser">Dashboard</a>
+      {% elif current_user.roles == 3 %}
+      <a class="button" href="/dashorders">Dashboard</a>
+      {% elif current_user.roles == 4 %}
+      <a class="button" href="/dashproduct">Dashboard</a>
+      {% endif%}
+      {% endif %}
+      <a class="button" href="/return-history">Riwayat Pengembalian Barang</a>
+     <a class="button" href="/change-password/{{ user.id }}" >Ganti Password</a>
+      <a class="button" href="/logout" >Logout</a>
+    </div>
+  </div>
+</div>
+<br><br><br><br><br><br><br><br><br>
+
+{% endblock %}

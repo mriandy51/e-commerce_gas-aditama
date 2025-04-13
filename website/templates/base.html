@@ -1,0 +1,169 @@
+<!-- prettier-ignore -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.min.js"></script>
+    <!-- ICON -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.1.0/remixicon.min.css"
+    />
+    {% block test %} {% endblock %}
+    <!-- CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        
+        if (isIOS) {
+          console.log("Push notifications not supported on iOS browsers");
+          const iosMessage = document.createElement('div');
+          iosMessage.style.display = 'none';
+          iosMessage.id = 'ios-notification-message';
+          iosMessage.innerHTML = `
+            <div style="background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin: 10px 0;">
+              Notifikasi tidak tersedia untuk perangkat iOS. Silakan gunakan browser desktop untuk fitur ini.
+            </div>
+          `;
+          document.body.insertBefore(iosMessage, document.body.firstChild);
+        } else {
+          await OneSignal.init({
+            appId: "1ab40228-4ab8-47b5-9052-33d6b0cc42e8",
+            allowLocalhostAsSecureOrigin: true,
+            serviceWorkerParam: { scope: "/static/js/" },
+            serviceWorkerPath: "/static/js/OneSignalSDKWorker.js",
+          });
+        }
+      });
+    </script>
+    <!-- Midtrans -->
+    <script type="text/javascript"
+    src="https://app.sandbox.midtrans.com/snap/snap.js"
+    data-client-key="SB-Mid-client-z_VKWl4iEpLX2i1q"></script>
+    <title>{% block title %} {% endblock %}</title>
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header" id="header">
+      <nav class="nav container">
+        <a href="/" class="nav_logo">
+          <i class="ri-gas-station-line"></i> Pangkalan Gas Aditama
+        </a>
+        <div class="nav_menu" id="nav-menu">
+          <ul class="nav_list">
+            <li class="nav_item">
+              <a href="/" class="nav_link">Beranda</a>
+            </li>
+            <li class="nav_item">
+              <a href="/info" class="nav_link">Informasi</a>
+            </li>
+            <li class="nav_item">
+              <a href="/shop" class="nav_link">Beli LPG</a>
+            </li>
+            <li class="nav_item">
+              <a href="/contact" class="nav_link">Hubungi Kami</a>
+            </li>
+          </ul>
+          <!-- Close Button -->
+          <div class="nav_close" id="nav-close">
+            <i class="ri-close-line"></i>
+          </div>
+        </div>
+        <div class="nav_actions">
+          {% if current_user.is_authenticated %}
+          <a href="/profile/{{ current_user.id }}" class="nav_icon">
+            <i class="ri-user-line"></i>
+          </a>
+          {% else %}
+          <a href="/login" class="nav_icon">
+            <i class="ri-user-line"></i>
+          </a>
+          {% endif %}
+
+          <a href="/cart" class="nav_cart_icon">
+            <i class="ri-shopping-cart-line"></i>
+
+          </a>
+
+          <!-- Toggle button -->
+          <div class="nav_toggle" id="nav-toggle">
+            <i class="ri-menu-line"></i>
+          </div>
+        </div>
+      </nav>
+    </header>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for message in messages %}
+        <div class="flash-message">
+            <div class="flash-content">
+                <i class="ri-checkbox-circle-line"></i>
+                <span>{{ message }}</span>
+            </div>
+            <button class="close-flash" onclick="closeFlashMessage(this)">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <main class="main">
+      {% block content %} {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer_container container grid">
+        <div class="footer_content grid">
+          <div>
+            <a href="/" class="footer_logo">
+              <i class="ri-gas-station-line"></i> Pangkalan Gas Aditama
+            </a>
+            <p class="footer_description">
+              Penyedia Gas LPG Berkualitas <br />
+              Harga Murah dan Terjangkau<br />
+              Isi Dijamin Sesuai No Tipu-tipu<br />
+            </p>
+          </div>
+          <div>
+            <a href="https://maps.app.goo.gl/iVbbGEdnCNaMtS3s7" class="footer_logo">
+              <i class="ri-map-2-fill"></i> Lokasi
+            </a>
+            <p class="footer_description">
+              Jl. Duri Pasar No. 5 <br />
+              Duri Selatan <br />
+              Tambora <br />
+              Jakarta Barat <br />
+            </p>
+          </div>
+          <div>
+            <a class="footer_logo">
+              <i class="ri-phone-line"></i> Telepon
+            </a>
+            <p class="footer_description">
+              Ingin menghubungi kami? Silahkan hubungi: <br />
+              <b>+62 812 8064 1880 </b> <br />
+              <b>+62 812 8048 0755 </b><br />
+        
+              Selain 2 nomor diatas adalah PENIPU!!<br />
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

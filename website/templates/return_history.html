@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Riwayat Return - Pangkalan Gas Aditama{% endblock %}
+
+{% block content %}
+<section class="returns-section">
+    <div class="container">
+        <h2 class="section-title">Riwayat Pengembalian Barang</h2>
+        
+        {% if returns %}
+            {% for return_request in returns %}
+            <div class="return-card">
+                <div class="return-header">
+                    <div class="return-info">
+                        <div class="product-info">
+                            <span class="label">Nama Barang:</span>
+                            <span class="value">{{ return_request.order_detail.variant.variant_name }}</span>
+                            <span class="variant-badge {% if return_request.order_detail.variant.variant_type == 'default' %}badge-default
+                                                    {% elif return_request.order_detail.variant.variant_type == 'refill' %}badge-refill
+                                                    {% else %}badge-empty{% endif %}">
+                                {{ return_request.order_detail.variant.variant_type }}
+                            </span>
+                        </div>
+                        <div class="order-info">
+                            <span class="label">ID Pesanan:</span>
+                            <span class="value">#{{ return_request.order_detail.order.id }}</span>
+                        </div>
+                    </div>
+                    <div class="return-date">
+                        <span class="label">Tanggal Pengajuan:</span>
+                        <span class="value">{{ return_request.date_requested.strftime('%d %B %Y, %H:%M') }}</span>
+                    </div>
+                    <div class="return-status">
+                        <span class="status-badge 
+                            {% if return_request.status == 'Dalam Proses' %}return-process
+                            {% elif return_request.status == 'Diterima' %}return-accepted
+                            {% elif return_request.status == 'Ditolak' %}return-rejected
+                            {% elif return_request.status == 'Selesai' %}return-complete{% endif %}">
+                            <i class="ri-refresh-line"></i>
+                            {{ return_request.status }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="return-details">
+                    <div class="quantity-info">
+                        <span class="label">Jumlah:</span>
+                        <span class="value">{{ return_request.quantity }} pcs</span>
+                    </div>
+                    <div class="reason-info">
+                        <span class="label">Alasan Pengembalian:</span>
+                        <p class="reason-text">{{ return_request.reason }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if pagination.total_pages > 1 %}
+            <div class="pagination">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('views.return_history', page=pagination.prev_page) }}" 
+                   class="pagination-btn"><i class="ri-arrow-left-s-line"></i> Previous</a>
+                {% endif %}
+                
+                {% for page_num in range(1, pagination.total_pages + 1) %}
+                    {% if page_num == pagination.page %}
+                    <span class="pagination-btn active">{{ page_num }}</span>
+                    {% else %}
+                    <a href="{{ url_for('views.return_history', page=page_num) }}" 
+                       class="pagination-btn">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('views.return_history', page=pagination.next_page) }}" 
+                   class="pagination-btn">Next <i class="ri-arrow-right-s-line"></i></a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        {% else %}
+            <div class="no-returns">
+                <i class="ri-inbox-archived-line"></i>
+                <p>Kamu belum memiliki pengajuan pengembalian barang</p>
+                <a href="/orders" class="back-btn">Kembali ke pesanan</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+.returns-section {
+    min-height: 100vh;
+    background-color: var(--black-color);
+    color: var(--text-color);
+    padding: 2rem 0;
+}
+
+.section-title{
+    margin-bottom: 2rem;
+}
+.return-card {
+    background: var(--container-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.return-card:hover {
+    transform: translateY(-4px);
+}
+
+.return-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.return-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.product-info, .order-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.label {
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.value {
+    color: var(--title-color);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.return-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.quantity-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.reason-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.reason-text {
+    color: var(--text-color);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.75rem;
+}
+
+.return-process {
+    background-color: rgba(51, 181, 229, 0.2);
+    color: #33b5e5;
+    border: 1px solid rgba(51, 181, 229, 0.4);
+}
+
+.return-accepted {
+    background-color: rgba(255, 187, 51, 0.2);
+    color: #ffbb33;
+    border: 1px solid rgba(255, 187, 51, 0.4);
+}
+
+.return-complete {
+    background-color: rgba(0, 200, 81, 0.2);
+    color: #00C851;
+    border: 1px solid rgba(0, 200, 81, 0.4);
+}
+
+.no-returns {
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.no-returns i {
+    font-size: 4rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.no-returns p {
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+}
+
+.back-btn {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: var(--first-color);
+    color: white;
+    border-radius: 2rem;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+}
+
+.back-btn:hover {
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .return-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .status-badge {
+        align-self: flex-start;
+    }
+}
+</style>
+{% endblock %}

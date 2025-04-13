@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Beli Gas{% endblock %}
+
+{% block content %}
+<section class="shop-section">
+    <div class="shop-container">
+        <h1 class="shop-title">Pesan Gas LPG</h1>
+        
+        <div class="products-grid">
+            {% for item in products %}
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ item.product_picture }}" alt="{{ item.product_name }}">
+                    <div class="product-overlay">
+                        <div class="variant-selector">
+                            <select class="variant-select" id="variant-{{ item.id }}">
+                                {% for variant in item.variants %}
+                                {% if variant.is_active and variant.variant_type != 'tabung_bocor' and 
+                                not (variant.variant_type == 'refill' and '3 kg' in variant.variant_name.lower()) %}
+                                <option value="{{ variant.id }}" 
+                                        data-price="{{ variant.price }}"
+                                        data-stock="{{ variant.stock }}">
+                                    {{ variant.variant_name }} - Rp {{ "{:,.0f}".format(variant.price).replace(",", ".") }}
+                                </option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <button onclick="addToCart({{ item.id }})" class="add-cart-btn">
+                                <i class="ri-shopping-cart-line"></i>
+                                Tambah ke Keranjang
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-details">
+                    <h3 class="product-name">{{ item.product_name }}</h3>
+                    <div class="product-info">
+                        <span class="product-stock" id="stock-{{ item.id }}">
+                            Stok: {{ item.variants[0].stock }}
+                        </span>
+                        <span class="product-price" id="price-{{ item.id }}">
+                            Rp {{ "{:,.0f}".format(item.variants[0].price).replace(",", ".") }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const variantSelects = document.querySelectorAll('.variant-select');
+    variantSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const productId = this.id.split('-')[1];
+            const selectedOption = this.options[this.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            const stock = selectedOption.getAttribute('data-stock');
+
+            // Update display
+            document.getElementById(`price-${productId}`).textContent = 
+                `Rp ${parseFloat(price).toLocaleString('id-ID')}`;
+            document.getElementById(`stock-${productId}`).textContent = 
+                `Stok: ${stock}`;
+        });
+    });
+});
+
+function addToCart(productId) {
+    const variantSelect = document.getElementById(`variant-${productId}`);
+    const variantId = variantSelect.value;
+    window.location.href = `/add-to-cart/${variantId}`;
+}
+</script>
+{% endblock %}

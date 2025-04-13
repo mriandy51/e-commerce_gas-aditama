@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}Hubungi Kami{% endblock %}
+
+{% block content %}
+<div class="contact-container">
+    <div class="faq-section">
+        <h2 class="section-title">Pertanyaan Yang Sering Ditanyakan</h2>
+        <div class="faq-list">
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Informasi Truk LPG 3 KG maksudnya apa ya?</h3>
+                    <span class="toggle-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Info tersebut bertujuan untuk memberitahu perkiraan kedatangan stok gas 3 kg setiap harinya
+                       (selain tanggal merah dan hari minggu) dikarenakan stoknya terbatas. </p>
+                  </ol>
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Saya mau beli gas LPG, gimana caranya?</h3>
+                    <span class="toggle-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Buat akun dulu, lalu login. Masukkan keranjang barang yang diinginkan dan bayar.</p>
+                    <p>Kemudian silahkan tunggu status pesanan menjadi 'Siap Diambil', baru anda bisa datang untuk mengambil gas ditempat kami.</p>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Gas saya bocor mas, bisa dibalikin gak ya?</h3>
+                    <span class="toggle-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Untuk pengembalian gas karena bocor maksimal 1 jam setelah pemesanan selesai, 
+                        silahkan ajukan pengembalian di riwayat pesanan anda. Kemudian tunggu status 
+                        'Accepted' dan silahkan datang ke toko sambil menunjukan bukti pengembalian anda.
+                    </p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Apakah hanya bisa memesan saja, tidak bisa diantar?</h3>
+                    <span class="toggle-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Untuk saat ini Pangkalan Gas Aditama tidak melayani pengiriman barang. Segala transaksi di situs ini hanya untuk pemesanan saja agar tidak kehabisan barang</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Bayarnya bisa pakai apa aja ya, di web ini?</h3>
+                    <span class="toggle-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Kami menerima pembayaran hanya melalui QRIS untuk pemesanan melalui website ini</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Kalo mau datang langsung bisa gak?</h3>
+                    <span class="toggle-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Silahkan. Untuk titik maps silahkan cari "Pangkalan Gas Aditama", dan untuk alamat terdapat pada bagian bawah website ini</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Saya mau pesan gas 3 kg dong mas, kok gaada?</h3>
+                    <span class="toggle-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Untuk pemesanan gas 3 kg (selain tabung kosong) hanya melayani pembelian secara langsung di toko dan diharapkan membawa KTP. Web ini hanya memberikan informasi perkiraan stok gas 3 kg dan harganya</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Keluhan / Kontak -->
+    <div class="contact-form-section">
+        <h2 class="section-title">Hubungi Kami</h2>
+        
+        <form class="contact-form" method="POST">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+              {{ form.guest_name(class="form-input", placeholder="Masukkan nama lengkap Anda") }}
+
+            </div>
+
+            <div class="form-group">
+                <label for="phone"> 
+                {{ form.whatsapp(class="form-input", 
+                                 placeholder="Masukkan nomor WhatsApp", 
+                                 type="tel", 
+                                 inputmode="numeric",
+                                 required=true,
+                                 oninvalid="this.setCustomValidity('Nomor WhatsApp harus diawali dengan 08 dan hanya berisi angka')",
+                                 oninput="this.setCustomValidity('')") }}
+                {% if form.whatsapp.errors %}
+                    {% for error in form.whatsapp.errors %}
+                        <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+              {{ form.title(class="form-input", placeholder="Masukkan subjek pesan") }}
+
+            </div>
+
+            <div class="form-group">
+              {{ form.complaint_content(class="form-input textarea", placeholder="Tuliskan pesan Anda secara singkat", maxlength="100") }}
+            </div>
+
+            {{ form.add_complaint(class="submit-btn") }}
+        </form>
+    </div>
+</div>
+
+<style>
+.contact-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 4rem auto;
+    padding: 0 1rem;
+}
+
+.section-title {
+    color: var(--title-color);
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* FAQ Styles */
+.faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.faq-item {
+    background: var(--container-color);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.faq-question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    cursor: pointer;
+}
+
+.faq-question h3 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.toggle-icon {
+    font-size: 1.5rem;
+    color: var(--first-color);
+}
+
+.faq-answer {
+    padding: 0 1rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.faq-item.active .faq-answer {
+    padding: 1rem;
+    max-height: 500px;
+}
+
+.faq-item.active .toggle-icon {
+    transform: rotate(45deg);
+}
+
+/* Contact Form Styles */
+.contact-form {
+    background: var(--container-color);
+    padding: 2rem;
+    border-radius: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--title-color);
+}
+
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--body-color);
+    border: 1px solid var(--first-color);
+    border-radius: 0.5rem;
+    color: var(--text-color);
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.form-input.textarea {
+    min-height: 150px;
+    max-height: 240px;
+    resize: vertical;
+    white-space: pre-wrap;      
+    word-wrap: break-word;      
+    overflow-wrap: break-word;  
+}
+
+.form-input::placeholder {
+  color: var(--text-color);
+  opacity: 0.5;
+}
+
+
+.submit-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--first-color);
+    color: var(--white-color);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: var(--font-semi-bold);
+    transition: background 0.3s ease;
+}
+
+.submit-btn:hover {
+    background: var(--first-color-alt);
+}
+
+@media (max-width: 768px) {
+    .contact-container {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
