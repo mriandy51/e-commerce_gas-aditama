@@ -1,4 +1,4 @@
-**This is an e-commerce website with several features like:**
+**This is an e-commerce website with several features likes:**
 1. LPG Gas ordering (Orders only without delivery) using MidTrans payment gateway
 2. Return ordered LPG with maximum time 1 hour after order finished
 3. Complaint form integrated with WhatsApp
